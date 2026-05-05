@@ -10,7 +10,7 @@ import lombok.Data;
 
 @Entity
 @Table(name = "productos")
-@Data // Esto genera Getters y Setters automáticamente gracias a Lombok
+@Data 
 public class Producto {
 
     @Id
@@ -33,5 +33,5 @@ public class Producto {
     private String categoria;
 
     @Column(nullable = false)
-    private Boolean activo = true; // Valor por defecto para eliminación lógica
+    private Boolean activo = true;
 }
