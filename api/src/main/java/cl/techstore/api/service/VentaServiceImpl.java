@@ -1,5 +1,7 @@
 package cl.techstore.api.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,4 +51,9 @@ public class VentaServiceImpl implements IVentaService {
         venta.setTotal(totalVenta);
         return ventaRepository.save(venta);
     }
+            @Override
+        @Transactional(readOnly = true)
+        public List<Venta> listarTodas() {
+            return ventaRepository.findAll();
+        }
 }
