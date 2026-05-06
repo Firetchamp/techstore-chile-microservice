@@ -9,5 +9,6 @@ import cl.techstore.api.model.Producto;
 
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
- List<Producto> findByActivoTrue();
+    List<Producto> findByActivoTrue();
+    List<Producto> findByCategoriaAndActivoTrue(String categoria);
 }

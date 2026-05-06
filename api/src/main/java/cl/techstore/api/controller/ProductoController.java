@@ -48,4 +48,10 @@ public class ProductoController {
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    // Nuevo: Buscar por categoría específica
+    @GetMapping("/categoria/{nombre}")
+    public List<Producto> buscarPorCategoria(@PathVariable String nombre) {
+        return productoRepository.findByCategoriaAndActivoTrue(nombre);
+    }
 }
