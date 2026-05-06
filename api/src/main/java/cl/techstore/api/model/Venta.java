@@ -1,17 +1,30 @@
 package cl.techstore.api.model;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "ventas")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// Blindaje contra proxies de Hibernate
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) 
 public class Venta {
 
     @Id
@@ -24,9 +37,9 @@ public class Venta {
     @Column(nullable = false)
     private Double total;
 
-    // Relación: Una venta tiene muchos detalles
-    // cascade = ALL para que al guardar la venta se guarden sus detalles automáticamente
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL)
+    // Evitamos que al serializar los detalles, estos intenten serializar la venta de vuelta
+    @JsonIgnoreProperties("venta") 
     private List<DetalleVenta> detalles;
 
     @PrePersist

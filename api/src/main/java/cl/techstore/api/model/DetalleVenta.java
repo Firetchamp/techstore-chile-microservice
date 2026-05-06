@@ -1,6 +1,7 @@
 package cl.techstore.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +20,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// Blindaje contra proxies de Hibernate
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) 
 public class DetalleVenta {
 
     @Id
@@ -28,20 +31,20 @@ public class DetalleVenta {
     @Column(nullable = false)
     private Integer cantidad;
 
-    @Column(nullable = false)
+    @Column(name = "precio_unitario", nullable = false)
     private Double precioUnitario;
 
     @Column(nullable = false)
     private Double subtotal;
 
-    // Relación con la Venta (Cabecera)
     @ManyToOne
     @JoinColumn(name = "venta_id", nullable = false)
-    @JsonIgnore // Evita bucles infinitos en el JSON
+    @JsonIgnore // Crucial para evitar recursividad infinita
     private Venta venta;
 
-    // Relación con el Producto
     @ManyToOne
     @JoinColumn(name = "producto_id", nullable = false)
+    // Toque profesional: Solo mostramos lo relevante del producto en el detalle
+    @JsonIgnoreProperties({"descripcion", "stock", "activo", "categoria", "hibernateLazyInitializer", "handler"})
     private Producto producto;
 }
