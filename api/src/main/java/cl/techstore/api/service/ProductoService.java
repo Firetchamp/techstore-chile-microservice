@@ -30,7 +30,7 @@ public class ProductoService {
         return productoRepository.findById(id).orElse(null);
     }
 
-    // IE5: Implementación de eliminación lógica
+    // Implementación de eliminación lógica
     public void eliminarLogico(Long id) {
         Producto producto = buscarPorId(id);
         if (producto != null) {
