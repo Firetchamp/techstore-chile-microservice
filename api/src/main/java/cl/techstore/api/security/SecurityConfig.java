@@ -18,16 +18,26 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable()) // Deshabilitamos CSRF para APIs REST
+        http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll() // El login es público
-                .anyRequest().authenticated() // Todo lo demás requiere Token
+                // 1. Endpoints de Autenticación
+                .requestMatchers("/api/auth/**").permitAll()
+                
+                // 2. Recursos de Swagger / OpenAPI (Acceso Libre)
+                .requestMatchers(
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/webjars/**"
+                ).permitAll()
+                
+                // 3. Todo lo demás requiere autenticación
+                .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // No guardamos estados (Stateless)
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             );
 
-        // Añadimos nuestro filtro antes del filtro estándar de Spring
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
