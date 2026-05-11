@@ -44,7 +44,7 @@ public class DetalleVenta {
 
     @ManyToOne
     @JoinColumn(name = "producto_id", nullable = false)
-    // Toque profesional: Solo mostramos lo relevante del producto en el detalle
+    // Dejamos que salga el ID, nombre y precio, pero ocultamos lo interno
     @JsonIgnoreProperties({"descripcion", "stock", "activo", "categoria", "hibernateLazyInitializer", "handler"})
     private Producto producto;
 }

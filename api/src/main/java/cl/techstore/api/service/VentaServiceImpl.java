@@ -21,39 +21,64 @@ public class VentaServiceImpl implements IVentaService {
     @Autowired
     private ProductoRepository productoRepository;
 
-    @Override
-    @Transactional // CRÍTICO: Si algo falla, se hace rollback de todo
-    public Venta registrarVenta(Venta venta) {
-        Double totalVenta = 0.0;
-
-        for (DetalleVenta detalle : venta.getDetalles()) {
-            // 1. Obtener el producto gestionado por la DB
-            Producto producto = productoRepository.findById(detalle.getProducto().getId())
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + detalle.getProducto().getId()));
-
-            // 2. Validar Stock
-            if (producto.getStock() < detalle.getCantidad()) {
-                throw new RuntimeException("Stock insuficiente para: " + producto.getNombre());
-            }
-
-            // 3. Descontar Stock
-            producto.setStock(producto.getStock() - detalle.getCantidad());
-            productoRepository.save(producto);
-
-            // 4. Calcular subtotales para el detalle
-            detalle.setPrecioUnitario(producto.getPrecio());
-            detalle.setSubtotal(producto.getPrecio() * detalle.getCantidad());
-            detalle.setVenta(venta);
-            
-            totalVenta += detalle.getSubtotal();
-        }
-
-        venta.setTotal(totalVenta);
-        return ventaRepository.save(venta);
+   @Override
+@Transactional
+public Venta registrarVenta(Venta venta) {
+    if (venta.getDetalles() == null || venta.getDetalles().isEmpty()) {
+        throw new RuntimeException("La venta debe tener al menos un producto.");
     }
-            @Override
-        @Transactional(readOnly = true)
-        public List<Venta> listarTodas() {
-            return ventaRepository.findAll();
+
+    StringBuilder errores = new StringBuilder();
+    Double totalAcumulado = 0.0;
+
+    // PRIMER PASO: Validar todo sin modificar nada (Check de stock)
+    for (DetalleVenta detalle : venta.getDetalles()) {
+        Producto producto = productoRepository.findById(detalle.getProducto().getId())
+                .orElseThrow(() -> new RuntimeException("Producto ID " + detalle.getProducto().getId() + " no existe."));
+
+        if (!producto.getActivo()) {
+            errores.append("- ").append(producto.getNombre()).append(" no está activo.\n");
         }
+
+        if (producto.getStock() < detalle.getCantidad()) {
+            errores.append("- ").append(producto.getNombre())
+                   .append(": solicitado ").append(detalle.getCantidad())
+                   .append(", disponible ").append(producto.getStock()).append(".\n");
+        }
+    }
+
+    // Si hubo errores, lanzamos la excepción con la lista completa
+    if (errores.length() > 0) {
+        throw new RuntimeException("Errores de stock detectados:\n" + errores.toString());
+    }
+
+    // SEGUNDO PASO: Si llegamos aquí, todo está bien. Procedemos a procesar.
+    for (DetalleVenta detalle : venta.getDetalles()) {
+        Producto producto = productoRepository.findById(detalle.getProducto().getId()).get();
+
+        // Descontar stock
+        producto.setStock(producto.getStock() - detalle.getCantidad());
+        productoRepository.save(producto);
+
+        // Sincronizar detalle con datos reales
+        detalle.setPrecioUnitario(producto.getPrecio());
+        detalle.setSubtotal(producto.getPrecio() * detalle.getCantidad());
+        detalle.setVenta(venta);
+        
+        // ¡TRUCO CLAVE! Seteamos el producto completo al detalle 
+        // para que el JSON de respuesta NO salga en null
+        detalle.setProducto(producto); 
+        
+        totalAcumulado += detalle.getSubtotal();
+    }
+
+    venta.setTotal(totalAcumulado);
+    return ventaRepository.save(venta);
+}
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Venta> listarTodas() {
+        return ventaRepository.findAll();
+    }
 }
