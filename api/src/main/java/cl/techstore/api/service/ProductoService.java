@@ -18,6 +18,10 @@ public class ProductoService {
         return productoRepository.findAll();
     }
 
+    public List<Producto> listarActivos() {
+        return productoRepository.findByActivoTrue();
+    }
+
     public Producto guardar(Producto producto) {
         return productoRepository.save(producto);
     }
@@ -26,7 +30,7 @@ public class ProductoService {
         return productoRepository.findById(id).orElse(null);
     }
 
-    // IE5: Implementación de eliminación lógica
+    // Implementación de eliminación lógica
     public void eliminarLogico(Long id) {
         Producto producto = buscarPorId(id);
         if (producto != null) {

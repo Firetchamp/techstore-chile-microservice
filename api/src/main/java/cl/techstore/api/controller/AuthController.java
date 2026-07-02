@@ -17,7 +17,7 @@ public class AuthController {
 
     private final JwtUtil jwtUtil;
 
-    // Leemos las credenciales desde application.properties (IE1)
+    // Leemos las credenciales desde application.properties
     @Value("${techstore.auth.username}")
     private String validUsername;
 
