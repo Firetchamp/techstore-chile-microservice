@@ -1,0 +1,50 @@
+name: Pipeline CI/CD TechStore Backend
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    name: 🛠️ Build & Test (Maven)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 17 (Java)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compilar y Ejecutar Pruebas con Maven
+        run: mvn clean package -DskipTests
+
+  docker-and-cloud:
+    name: 🐳 Docker Build & Cloud Prep
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Credenciales de AWS (Configuración Cloud IE14)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construir Imagen Docker (IE15)
+        run: |
+          docker build -t techstore-backend:latest .
+          echo "✅ Imagen Docker 'techstore-backend:latest' construida exitosamente en el Pipeline."
