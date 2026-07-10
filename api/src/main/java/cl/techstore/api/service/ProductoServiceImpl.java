@@ -1,11 +1,13 @@
 package cl.techstore.api.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import cl.techstore.api.dto.AuditMessage;
 import cl.techstore.api.model.Producto;
 import cl.techstore.api.repository.ProductoRepository;
 
@@ -14,6 +16,9 @@ public class ProductoServiceImpl implements IProductoService {
 
     @Autowired
     private ProductoRepository productoRepository;
+
+    @Autowired
+    private SqsProducerService sqsProducerService;
 
     @Override
     @Transactional(readOnly = true)
@@ -40,7 +45,23 @@ public class ProductoServiceImpl implements IProductoService {
         if (producto.getActivo() == null) {
             producto.setActivo(true);
         }
-        return productoRepository.save(producto);
+        
+        // 1. Guardamos el producto en la base de datos PostgreSQL local
+        Producto productoGuardado = productoRepository.save(producto);
+        
+        // 2. Construimos de manera limpia el DTO con las variables correspondientes
+        AuditMessage auditMessage = new AuditMessage(
+            "PRODUCT_CREATED",
+            productoGuardado.getId(),
+            productoGuardado.getNombre(),
+            productoGuardado.getPrecio(),
+            LocalDateTime.now().toString()
+        );
+        
+        // 3. Enviamos el mensaje a la cola de AWS SQS de fondo sin retrasar la respuesta del cliente
+        sqsProducerService.sendAuditMessage(auditMessage);
+        
+        return productoGuardado;
     }
 
     @Override
